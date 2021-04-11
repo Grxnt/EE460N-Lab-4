@@ -53,7 +53,7 @@ int signExt(int input, int numSize);
 /***************************************************************/
 enum CS_BITS {                                                  
     IRD,
-    COND1, COND0,
+    COND2, COND1, COND0,
     J5, J4, J3, J2, J1, J0,
     LD_MAR,
     LD_MDR,
@@ -78,6 +78,25 @@ enum CS_BITS {
     R_W,
     DATA_SIZE,
     LSHF1,
+    LD_UA_EXC,
+    LD_P_EXC,
+    LD_PRIO,
+    LD_PSR,
+    LD_TEMP,
+    LD_VDIR,
+    LD_EXCV,
+    LD_VECTOR,
+    LD_SPARESP,
+    LD_SP,
+    GATE_TEMP,
+    GATE_SP,
+    VDIR_VAL,
+    ALU_ALT,
+    P_EXCMUX,
+    EXC_MUX,
+    SP_MUX,
+    CLR_PSR15,
+    CLR_IB,
 /* MODIFY: you have to add all your new control signals */
     CONTROL_STORE_BITS
 } CS_BITS;
@@ -86,7 +105,7 @@ enum CS_BITS {
 /* Functions to get at the control bits.                       */
 /***************************************************************/
 int GetIRD(int *x)           { return(x[IRD]); }
-int GetCOND(int *x)          { return((x[COND1] << 1) + x[COND0]); }
+int GetCOND(int *x)          { return((x[COND2] << 2) + (x[COND1] << 1) + x[COND0]); }
 int GetJ(int *x)             { return((x[J5] << 5) + (x[J4] << 4) +
 				      (x[J3] << 3) + (x[J2] << 2) +
 				      (x[J1] << 1) + x[J0]); }
@@ -97,22 +116,46 @@ int GetLD_BEN(int *x)        { return(x[LD_BEN]); }
 int GetLD_REG(int *x)        { return(x[LD_REG]); }
 int GetLD_CC(int *x)         { return(x[LD_CC]); }
 int GetLD_PC(int *x)         { return(x[LD_PC]); }
+int GetLD_UA_EXC(int *x)     { return(x[LD_UA_EXC]); }
+int GetLD_P_EXC(int *x)      { return(x[LD_P_EXC]); }
+int GetLD_PRIO(int *x)       { return(x[LD_PRIO]); }
+int GetLD_PSR(int *x)        { return(x[LD_PSR]); }
+int GetLD_TEMP(int *x)       { return(x[LD_TEMP]); }
+int GetLD_VDIR(int *x)       { return(x[LD_VDIR]); }
+int GetLD_EXCV(int *x)       { return(x[LD_EXCV]); }
+int GetLD_VECTOR(int *x)     { return(x[LD_VECTOR]); }
+int GetLD_SPARESP(int *x)    { return(x[LD_SPARESP]); }
+int GetLD_SP(int *x)         { return(x[LD_SP]); }
+
 int GetGATE_PC(int *x)       { return(x[GATE_PC]); }
 int GetGATE_MDR(int *x)      { return(x[GATE_MDR]); }
 int GetGATE_ALU(int *x)      { return(x[GATE_ALU]); }
 int GetGATE_MARMUX(int *x)   { return(x[GATE_MARMUX]); }
 int GetGATE_SHF(int *x)      { return(x[GATE_SHF]); }
+int GetGATE_TEMP(int *x)     { return(x[GATE_TEMP]); }
+int GetGATE_SP(int *x)       { return(x[GATE_SP]); }
+
 int GetPCMUX(int *x)         { return((x[PCMUX1] << 1) + x[PCMUX0]); }
 int GetDRMUX(int *x)         { return(x[DRMUX]); }
 int GetSR1MUX(int *x)        { return(x[SR1MUX]); }
 int GetADDR1MUX(int *x)      { return(x[ADDR1MUX]); }
 int GetADDR2MUX(int *x)      { return((x[ADDR2MUX1] << 1) + x[ADDR2MUX0]); }
 int GetMARMUX(int *x)        { return(x[MARMUX]); }
+int GetP_EXCMUX(int *x)      { return(x[P_EXCMUX]); }
+int GetEXC_MUX(int *x)       { return(x[EXC_MUX]); }
+int GetSP_MUX(int *x)        { return(x[SP_MUX]); }
+
 int GetALUK(int *x)          { return((x[ALUK1] << 1) + x[ALUK0]); }
 int GetMIO_EN(int *x)        { return(x[MIO_EN]); }
 int GetR_W(int *x)           { return(x[R_W]); }
 int GetDATA_SIZE(int *x)     { return(x[DATA_SIZE]); } 
 int GetLSHF1(int *x)         { return(x[LSHF1]); }
+
+int GetVDIR_VAL(int *x)      { return(x[VDIR_VAL]); }
+int GetALU_ALT(int *x)       { return(x[ALU_ALT]); }
+int GetCLR_PSR15(int *x)     { return(x[CLR_PSR15]); }
+int GetCLR_IB(int *x)        { return(x[CLR_IB]); }
+
 /* MODIFY: you can add more Get functions for your new control signals */
 
 /***************************************************************/
