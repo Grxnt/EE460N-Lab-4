@@ -100,6 +100,7 @@ enum CS_BITS {
     SSP_MUX1, SSP_MUX0,
     REG_MUX1, REG_MUX0,
     EXC_MUX1, EXC_MUX0,
+    LD_REG_MUX,
     CLR_PSR15,
     CLR_IB,
 /* MODIFY: you have to add all your new control signals */
@@ -153,6 +154,7 @@ int GetREG_MUX(int *x)       { return((x[REG_MUX1] << 1) + x[REG_MUX0]); }
 int GetEXC_MUX(int *x)       { return((x[EXC_MUX1] << 1) + x[EXC_MUX0]); }
 int GetSSP_MUX(int *x)       { return((x[SSP_MUX1] << 1) + x[SSP_MUX0]); }
 int GetCMP_MUX(int *x)       { return(x[CMP_MUX]); }
+int GetLD_REG_MUX(int *x)    { return(x[LD_REG_MUX]); }
 
 int GetALUK(int *x)          { return((x[ALUK1] << 1) + x[ALUK0]); }
 int GetMIO_EN(int *x)        { return(x[MIO_EN]); }
@@ -682,8 +684,8 @@ void eval_micro_sequencer() {
 //get MicroInstruction
     int *x = CURRENT_LATCHES.MICROINSTRUCTION;
 
-//    setbuf(stdout, 0);
-//    printf("State %d, cycle %d\n", CURRENT_LATCHES.STATE_NUMBER, CYCLE_COUNT);
+    setbuf(stdout, 0);
+    printf("State %d, cycle %d\n", CURRENT_LATCHES.STATE_NUMBER, CYCLE_COUNT);
 
     //check IRD bit
     int IRD = GetIRD(x);
@@ -691,8 +693,8 @@ void eval_micro_sequencer() {
     if(IRD){
         //next state is opcode of IR
 
-//        setbuf(stdout, 0);
-//        printf("decoding\n");
+        setbuf(stdout, 0);
+        printf("decoding\n");
 
         int nextState = (CURRENT_LATCHES.IR >> 12) & 0b0000000000001111;
         //get next Microinstruction from Control Store
@@ -859,8 +861,8 @@ void cycle_memory() {
             //we can reset cycles at the end of this if block
             cycles = MEM_CYCLES;        //reset values
             NEXT_LATCHES.READY = 0;     //reset values
-//            setbuf(stdout, 0);
-//            printf("Memory Access completed\n");
+            setbuf(stdout, 0);
+            printf("Memory Access completed\n");
         }
 
     }
@@ -1025,8 +1027,8 @@ void drive_bus() {
     int g_usp_bit = GetGate_USP(x);
 
     if(g_alu_bit + g_marmux_bit + g_mdr_bit + g_pc_bit + g_shf_bit + g_temp_bit + g_ssp_bit +g_usp_bit > 1){
-//        setbuf(stdout, 0);
-//        printf("Too many signals are being gated onto the bus\n");
+        setbuf(stdout, 0);
+        printf("Too many signals are being gated onto the bus\n");
     }
     else{
         if(g_mdr_bit){
@@ -1107,8 +1109,8 @@ void latch_datapath_values() {
             SR1Out = CURRENT_LATCHES.REGS[SR1Num];
         }
     }
+    if(GetLD_REG_MUX(x)){}
 
-    if(GetLD_REG(x) == 1) {
         int regInput;
 
         if(GetREG_MUX(x) == 0){
@@ -1121,20 +1123,44 @@ void latch_datapath_values() {
             regInput = SR1Out + 2;
         }
 
-        if(GetLD_R6(x) == 1){
-         NEXT_LATCHES.REGS[6] = regInput;
+        if(GetLD_REG_MUX(x) == 0 && GetLD_REG(x) == 1) {
+            if (GetLD_R6(x) == 1) {
+                NEXT_LATCHES.REGS[6] = regInput;
 //            setbuf(stdout, 0);
 //            printf("R6 Changed---------------------------------------\n");
-        }
-        else {
-            if (GetDRMUX(x) == 0) {
-                int DrNum = (CURRENT_LATCHES.IR >> 9) & 0b0000000000000111;
-                NEXT_LATCHES.REGS[DrNum] = regInput;
-            } else if (GetDRMUX(x) == 1) {
-                NEXT_LATCHES.REGS[7] = regInput;
+            }
+            else {
+                if (GetDRMUX(x) == 0) {
+                    int DrNum = (CURRENT_LATCHES.IR >> 9) & 0b0000000000000111;
+                    NEXT_LATCHES.REGS[DrNum] = regInput;
+                } else if (GetDRMUX(x) == 1) {
+                    NEXT_LATCHES.REGS[7] = regInput;
+                }
             }
         }
-    }
+        else if(GetLD_REG_MUX(x) == 1 && GetLD_REG(x) == 1){
+            if(((CURRENT_LATCHES.PSR & 0b1000000000000000) >> 15) == 1){
+                if (GetLD_R6(x) == 1) {
+                    NEXT_LATCHES.REGS[6] = regInput;
+//            setbuf(stdout, 0);
+//            printf("R6 Changed---------------------------------------\n");
+                }
+                else {
+                    if (GetDRMUX(x) == 0) {
+                        int DrNum = (CURRENT_LATCHES.IR >> 9) & 0b0000000000000111;
+                        NEXT_LATCHES.REGS[DrNum] = regInput;
+                    } else if (GetDRMUX(x) == 1) {
+                        NEXT_LATCHES.REGS[7] = regInput;
+                    }
+                }
+            }
+        }
+
+
+
+
+
+
     // IR
     if(GetLD_IR(x) == 1){
         NEXT_LATCHES.IR = Low16bits(BUS);
@@ -1199,7 +1225,7 @@ void latch_datapath_values() {
     }
     int off6 = (CURRENT_LATCHES.IR & 0b0000000000111111);
     if(GetLD_UA_EXC(x) == 1){
-        NEXT_LATCHES.UA_EXC = (((off6+Addr1MuxOut) & 1) == 1);
+        NEXT_LATCHES.UA_EXC = ((((off6 << 1)+Addr1MuxOut) & 1) == 1);
     }
 
     if(GetLD_P_EXC(x) == 1){
